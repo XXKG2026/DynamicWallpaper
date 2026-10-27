@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%2011%2B-lightgrey.svg)]()
+[![Release](https://img.shields.io/github/v/release/XXKG2026/DynamicWallpaper)](https://github.com/XXKG2026/DynamicWallpaper/releases/latest)
 
 Plays any MP4 video full-screen on your macOS desktop as a live wallpaper. Native Swift + AppKit, no third-party dependencies, under 1 MB.
 
@@ -46,7 +47,22 @@ The video window sits between the wallpaper and the desktop icons, so:
 - macOS 11.0+ (Big Sur or later)
 - Xcode Command Line Tools (`xcode-select --install`)
 
-## Install
+## Download
+
+Don't want to build it yourself? Grab the prebuilt package (universal binary, runs natively on both Apple Silicon and Intel):
+
+**https://github.com/XXKG2026/DynamicWallpaper/releases/latest**
+
+Download `DynamicWallpaper-*-macos.zip`, then:
+
+```bash
+unzip DynamicWallpaper-v1.0.0-macos.zip -d /Applications
+xattr -cr /Applications/DynamicWallpaper.app
+```
+
+The app is ad-hoc signed and not notarized by Apple. On first launch use right-click → Open, or run the `xattr -cr` command above.
+
+## Build from source
 
 ```bash
 git clone https://github.com/XXKG2026/DynamicWallpaper.git
@@ -56,7 +72,7 @@ cd DynamicWallpaper
 
 `build.sh` will: compile → generate icon → assemble the `.app` bundle → ad-hoc sign → install to `/Applications` → register with LaunchServices.
 
-To build a universal binary (Apple Silicon + Intel), which is what the release packages use:
+By default it builds for the host architecture only. To produce a universal binary (Apple Silicon + Intel), which is what the release packages use:
 
 ```bash
 UNIVERSAL=1 ./build.sh

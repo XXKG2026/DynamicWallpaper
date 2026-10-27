@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%2011%2B-lightgrey.svg)]()
+[![Release](https://img.shields.io/github/v/release/XXKG2026/DynamicWallpaper)](https://github.com/XXKG2026/DynamicWallpaper/releases/latest)
 
 把任意 MP4 视频铺满 macOS 桌面，作为动态壁纸播放。原生 Swift + AppKit 实现，无第三方依赖，体积不到 1 MB。
 
@@ -46,7 +47,22 @@ macOS 系统设置里只支持静态图片，没有视频壁纸选项。这个�
 - macOS 11.0+（Big Sur 及以上，代码用到 `UTType` / `allowedContentTypes`）
 - Xcode Command Line Tools（`xcode-select --install`）
 
-## 安装
+## 下载
+
+不想自己编译的话，直接下现成的安装包（通用二进制，Apple Silicon + Intel 都能原生跑）：
+
+**https://github.com/XXKG2026/DynamicWallpaper/releases/latest**
+
+下载 `DynamicWallpaper-*-macos.zip` 后：
+
+```bash
+unzip DynamicWallpaper-v1.0.0-macos.zip -d /Applications
+xattr -cr /Applications/DynamicWallpaper.app
+```
+
+应用为 ad-hoc 签名，未做 Apple 公证，首次打开需右键 →「打开」，或执行上面的 `xattr -cr`。
+
+## 从源码构建
 
 ```bash
 git clone https://github.com/XXKG2026/DynamicWallpaper.git
