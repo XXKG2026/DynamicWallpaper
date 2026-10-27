@@ -1,0 +1,137 @@
+name: Release
+
+# 打 tag（v1.0.0 之类）自动构建并发布；也可以在 Actions 页面手动指定 tag 触发
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '版本标签，如 v1.0.0'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: 构建并发布
+    runs-on: macos-14
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 确定版本
+        id: ver
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "构建版本: ${TAG}"
+
+      - name: 环境信息
+        run: |
+          sw_vers
+          xcrun swiftc --version
+          echo "runner 架构: $(uname -m)"
+
+      # runner 是 arm64，不显式要求通用二进制的话产物在 Intel Mac 上跑不了
+      - name: 编译通用二进制
+        env:
+          UNIVERSAL: '1'
+          INSTALL_DIR: ${{ runner.temp }}/install
+        run: |
+          set -euo pipefail
+          mkdir -p "$INSTALL_DIR"
+          ./build.sh
+
+      - name: 校验产物
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/install/DynamicWallpaper.app"
+          echo "架构: $(lipo -archs "$APP/Contents/MacOS/DynamicWallpaper")"
+          codesign -dv --verbose=2 "$APP" 2>&1 | grep -E 'Identifier|Signature' || true
+          codesign -v "$APP"
+          echo "签名校验通过"
+          du -sh "$APP"
+
+      - name: 生成发布包
+        id: pack
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.ver.outputs.tag }}"
+          mkdir -p dist
+          APP_ZIP="dist/DynamicWallpaper-${TAG}-macos.zip"
+          # ditto 是 macOS 上打包 .app 的正确方式，能保留符号链接与可执行位
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$RUNNER_TEMP/install/DynamicWallpaper.app" "$APP_ZIP"
+          ./make-skill.sh dist
+          echo "app_zip=${APP_ZIP}" >> "$GITHUB_OUTPUT"
+          ls -lh dist
+          echo "--- 应用包内容 ---"
+          unzip -l "$APP_ZIP" | head -20
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: DynamicWallpaper-${{ steps.ver.outputs.tag }}
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: 创建 GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.ver.outputs.tag }}"
+          NOTES="$RUNNER_TEMP/notes.md"
+          {
+            echo "## DynamicWallpaper ${TAG}"
+            echo
+            echo "把任意 MP4 铺满 macOS 桌面作为动态壁纸播放。原生 Swift + AppKit，无第三方依赖。"
+            echo
+            echo "### 下载"
+            echo
+            echo "| 文件 | 用途 |"
+            echo "|---|---|"
+            echo "| \`DynamicWallpaper-${TAG}-macos.zip\` | 应用本体，通用二进制（Apple Silicon + Intel） |"
+            echo "| \`macos-video-wallpaper.zip\` | AI Agent 技能包，可选 |"
+            echo
+            echo "### 安装"
+            echo
+            echo '```bash'
+            echo "unzip DynamicWallpaper-${TAG}-macos.zip -d /Applications"
+            echo "xattr -cr /Applications/DynamicWallpaper.app"
+            echo '```'
+            echo
+            echo "> 应用为 ad-hoc 签名，未做 Apple 公证，首次打开需右键 →「打开」，或执行上面的 \`xattr -cr\`。"
+            echo "> 要求 macOS 11.0+。"
+            echo
+            echo "### 本次变更"
+            echo
+            git log -15 --no-merges --pretty='- %s'
+          } > "$NOTES"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release ${TAG} 已存在，覆盖上传"
+            gh release upload "$TAG" dist/*.zip --clobber
+            gh release edit "$TAG" --notes-file "$NOTES"
+          else
+            gh release create "$TAG" dist/*.zip \
+              --title "DynamicWallpaper ${TAG}" \
+              --notes-file "$NOTES"
+          fi
+          echo "已发布: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${TAG}"
