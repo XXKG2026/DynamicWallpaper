@@ -14,6 +14,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT="${1:-$ROOT/dist}"
 NAME="macos-video-wallpaper"
 
+# 下面会 cd 到临时目录，相对路径会失效，先固定成绝对路径
+mkdir -p "$OUT"
+OUT="$(cd "$OUT" && pwd)"
+
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
