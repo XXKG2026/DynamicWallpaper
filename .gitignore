@@ -1,0 +1,15 @@
+# ── 构建产物（由 build.sh 生成，不入库） ──
+DynamicWallpaper
+makeicon
+DynamicWallpaper.app/
+AppIcon.iconset/
+AppIcon.icns
+icon_1024.png
+
+# ── 第三方素材：视频截图，不入库 ──
+preview/
+
+# ── 系统垃圾 ──
+.DS_Store
+._*
+*.log
