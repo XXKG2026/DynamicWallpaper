@@ -1,11 +1,12 @@
 # 动态壁纸 · DynamicWallpaper
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%2010.13%2B-lightgrey.svg)]()
+[![Platform](https://img.shields.io/badge/platform-macOS%2011%2B-lightgrey.svg)]()
 
 把任意 MP4 视频铺满 macOS 桌面，作为动态壁纸播放。原生 Swift + AppKit 实现，无第三方依赖，体积不到 1 MB。
 
 > A lightweight macOS live-wallpaper app that plays any MP4 as your desktop background. Pure Swift + AppKit, no dependencies.
+> [English](README.en.md)
 
 <p align="center">
   <img src="docs/icon.png" width="180" alt="icon">
@@ -42,18 +43,24 @@ macOS 系统设置里只支持静态图片，没有视频壁纸选项。这个�
 
 ## 环境要求
 
-- macOS 10.13+
+- macOS 11.0+（Big Sur 及以上，代码用到 `UTType` / `allowedContentTypes`）
 - Xcode Command Line Tools（`xcode-select --install`）
 
 ## 安装
 
 ```bash
-git clone https://github.com/imanstore/DynamicWallpaper.git
+git clone https://github.com/XXKG2026/DynamicWallpaper.git
 cd DynamicWallpaper
 ./build.sh
 ```
 
 `build.sh` 会依次：编译 → 生成图标 → 打包 `.app` → Ad-hoc 签名 → 安装到 `/Applications` → 注册到 LaunchServices。
+
+默认只编译当前机器架构。要产出 Apple Silicon + Intel 都能跑的通用二进制（Release 包就是这么打的）：
+
+```bash
+UNIVERSAL=1 ./build.sh
+```
 
 ## 使用
 
@@ -174,6 +181,19 @@ ffprobe -show_entries stream=codec_name,width,height "your.mp4"
 
 `skill/` 目录只存 `SKILL.md` 和 `scripts/`，app 源码复用仓库根目录那份，由 `make-skill.sh` 在打包时复制进去——避免同一份代码在仓库里存两遍、改一处忘另一处。
 
+## 发布 Release
+
+打 tag 即自动构建并发布，由 GitHub Actions 完成：
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+工作流会编译通用二进制（arm64 + x86_64）、用 `ditto` 打包 `.app`、附带 skill 包，一起挂到 GitHub Release 上。也可以在 Actions 页面手动指定 tag 触发。
+
+发布包里的 `.app` 是 ad-hoc 签名，首次打开需右键 →「打开」，或执行 `xattr -cr`。
+
 ## 项目结构
 
 ```
@@ -187,7 +207,9 @@ ffprobe -show_entries stream=codec_name,width,height "your.mp4"
 ├── skill/                   # Skill 定义与脚本（源码打包时注入）
 │   ├── SKILL.md
 │   └── scripts/
+├── .github/workflows/       # Release 自动构建
 ├── docs/icon.png            # README 用图标
+├── README.en.md             # 英文说明
 └── LICENSE
 ```
 

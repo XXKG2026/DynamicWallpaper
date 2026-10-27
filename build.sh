@@ -7,11 +7,23 @@ PROJ="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_NAME="DynamicWallpaper"
 BUNDLE_ID="com.local.dynamicwallpaper"
 INSTALL_DIR="${INSTALL_DIR:-/Applications}"   # 可用环境变量覆盖，如 ~/Applications
+UNIVERSAL="${UNIVERSAL:-0}"                   # =1 时编译 arm64 + x86_64 通用二进制（发布用）
 
 cd "$PROJ"
 
 echo "▸ 1/6 编译主程序"
-xcrun swiftc -O "${APP_NAME}.swift" -o "${APP_NAME}"
+if [ "$UNIVERSAL" = "1" ]; then
+  # 通用二进制：Apple Silicon 与 Intel 都能原生运行
+  # 注意：代码用到 UTType / allowedContentTypes，最低 macOS 11.0，不是 10.13
+  for arch in arm64 x86_64; do
+    xcrun swiftc -O -target "${arch}-apple-macos11.0" "${APP_NAME}.swift" -o "${APP_NAME}-${arch}"
+  done
+  xcrun lipo -create -output "${APP_NAME}" "${APP_NAME}-arm64" "${APP_NAME}-x86_64"
+  rm -f "${APP_NAME}-arm64" "${APP_NAME}-x86_64"
+  echo "  通用二进制: $(xcrun lipo -archs "${APP_NAME}")"
+else
+  xcrun swiftc -O "${APP_NAME}.swift" -o "${APP_NAME}"
+fi
 
 echo "▸ 2/6 生成图标"
 if [ ! -f AppIcon.icns ] || [ "${APP_NAME}.swift" -nt AppIcon.icns ]; then
