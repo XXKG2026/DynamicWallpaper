@@ -48,7 +48,7 @@ macOS 系统设置里只支持静态图片，没有视频壁纸选项。这个�
 ## 安装
 
 ```bash
-git clone https://github.com/<your-name>/DynamicWallpaper.git
+git clone https://github.com/imanstore/DynamicWallpaper.git
 cd DynamicWallpaper
 ./build.sh
 ```
@@ -130,7 +130,16 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.local.dynamicwallpap
 
 **`start.sh` 传的参数没生效 / 总播放同一个视频**
 
-macOS 26+ 上 `open -a ... --args` 会丢弃 `--args`，应用只能拿到自身路径。本项目已改为直接 `nohup` 启动 app 内的可执行文件，这是唯一可靠的传参方式。若你手动改过脚本，注意不要用 `open --args`。
+macOS 26+ 上 `open -a ... --args` 会丢弃 `--args`，应用只能拿到自身路径（实测 `-a` 路径、`-b` bundleid、`-n`、`--dir=x` 等号形式全部失效）。
+
+本项目的做法是：`start.sh` 先把参数写进配置文件，再用 `open -a` 启动，应用启动时读取配置。
+
+```json
+// ~/Library/Application Support/macos-video-wallpaper/config.json
+{ "file": "/path/to/x.mp4", "dir": "~/Movies/动态壁纸", "shuffle": true }
+```
+
+不要改回 `open --args`，也不要改成 `nohup` 直接跑二进制——后者启动的进程会被父 shell 的进程组清理掉，看起来起来了，实际几十秒后就没了。`open -a` 交给 launchd 托管，才能长期存活。
 
 **首次打开提示「无法验证开发者」**
 
