@@ -6,6 +6,10 @@ AppIcon.iconset/
 AppIcon.icns
 icon_1024.png
 
+# ── skill 打包产物（由 make-skill.sh 生成，源码复用根目录） ──
+skill/assets/
+dist/
+
 # ── 第三方素材：视频截图，不入库 ──
 preview/
 

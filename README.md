@@ -153,6 +153,18 @@ xattr -cr /Applications/DynamicWallpaper.app
 ffprobe -show_entries stream=codec_name,width,height "your.mp4"
 ```
 
+## 作为 AI Agent 技能使用
+
+仓库同时提供一个可直接安装的 Skill，让 AI 助手能用一句话完成「把这段视频设为壁纸」：
+
+```bash
+./make-skill.sh          # 生成 dist/macos-video-wallpaper.zip
+```
+
+把 zip 解压到 `~/.workbuddy-ai/skills/` 即可。技能会自动编译安装应用、列出可用视频、启动播放。
+
+`skill/` 目录只存 `SKILL.md` 和 `scripts/`，app 源码复用仓库根目录那份，由 `make-skill.sh` 在打包时复制进去——避免同一份代码在仓库里存两遍、改一处忘另一处。
+
 ## 项目结构
 
 ```
@@ -162,11 +174,15 @@ ffprobe -show_entries stream=codec_name,width,height "your.mp4"
 ├── Info.plist               # bundle 配置
 ├── build.sh                 # 编译 + 打包 + 安装
 ├── start.sh                 # 启动 / 停止 / 状态
+├── make-skill.sh            # 生成可分发的 skill 包
+├── skill/                   # Skill 定义与脚本（源码打包时注入）
+│   ├── SKILL.md
+│   └── scripts/
 ├── docs/icon.png            # README 用图标
 └── LICENSE
 ```
 
-构建产物（`DynamicWallpaper`、`*.app`、`AppIcon.icns` 等）均已列入 `.gitignore`，由 `build.sh` 自动生成。
+构建产物（`DynamicWallpaper`、`*.app`、`AppIcon.icns`、`dist/`、`skill/assets/` 等）均已列入 `.gitignore`，由脚本自动生成。
 
 ## 说明
 
