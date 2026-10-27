@@ -13,6 +13,12 @@
   <img src="docs/icon.png" width="180" alt="icon">
 </p>
 
+<p align="center">
+  <img src="docs/preview.jpg" width="860" alt="运行效果：视频铺满桌面，菜单栏与 Dock 正常显示在其上方">
+</p>
+
+<p align="center"><sub>视频铺满桌面，桌面图标与所有应用窗口正常覆盖其上</sub></p>
+
 ---
 
 ## 为什么需要它

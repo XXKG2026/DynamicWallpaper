@@ -13,6 +13,12 @@ Plays any MP4 video full-screen on your macOS desktop as a live wallpaper. Nativ
   <img src="docs/icon.png" width="180" alt="icon">
 </p>
 
+<p align="center">
+  <img src="docs/preview.jpg" width="860" alt="In action: the video fills the desktop, with the menu bar and Dock rendering above it">
+</p>
+
+<p align="center"><sub>The video fills the desktop; icons and all app windows render normally on top</sub></p>
+
 ---
 
 ## Why this exists
