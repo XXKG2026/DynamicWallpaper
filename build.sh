@@ -46,6 +46,9 @@ pkill -f "$APP_NAME" 2>/dev/null || true
 sleep 0.5
 rm -rf "${INSTALL_DIR}/${APP_NAME}.app"
 cp -R "${APP_NAME}.app" "${INSTALL_DIR}/"
+# 从 exFAT 等不支持 Unix 权限的文件系统复制时，权限会变成 700，这里归一化为标准值
+chmod -R u+rwX,go+rX "${INSTALL_DIR}/${APP_NAME}.app"
+chmod +x "${INSTALL_DIR}/${APP_NAME}.app/Contents/MacOS/${APP_NAME}"
 xattr -cr "${INSTALL_DIR}/${APP_NAME}.app" 2>/dev/null || true
 codesign -v "${INSTALL_DIR}/${APP_NAME}.app"
 
