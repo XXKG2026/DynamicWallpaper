@@ -128,6 +128,10 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.local.dynamicwallpap
 
 ## 常见问题
 
+**`start.sh` 传的参数没生效 / 总播放同一个视频**
+
+macOS 26+ 上 `open -a ... --args` 会丢弃 `--args`，应用只能拿到自身路径。本项目已改为直接 `nohup` 启动 app 内的可执行文件，这是唯一可靠的传参方式。若你手动改过脚本，注意不要用 `open --args`。
+
 **首次打开提示「无法验证开发者」**
 
 应用为 Ad-hoc 签名，未做 Apple 公证。右键 → 打开，或：

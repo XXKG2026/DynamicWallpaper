@@ -6,7 +6,7 @@ set -e
 PROJ="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_NAME="DynamicWallpaper"
 BUNDLE_ID="com.local.dynamicwallpaper"
-INSTALL_DIR="/Applications"
+INSTALL_DIR="${INSTALL_DIR:-/Applications}"   # 可用环境变量覆盖，如 ~/Applications
 
 cd "$PROJ"
 
