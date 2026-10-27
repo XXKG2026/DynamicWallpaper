@@ -135,6 +135,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var lastVideo: String = ""
     private var debugMode: Bool = false
     private var lockFD: Int32 = -1
+    private var logHandle: FileHandle?
 
     // MARK: 单实例锁
 
@@ -151,21 +152,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+    // MARK: 日志
+
+    /// 同时写到 stderr 和日志文件。用 `open -a` 启动时 stderr 不可见，
+    /// 只有文件日志能反映启动失败原因。
+    static var logPath: String {
+        NSHomeDirectory() + "/Library/Logs/macos-video-wallpaper.log"
+    }
+
+    private func setupLog() {
+        let path = Self.logPath
+        try? FileManager.default.createDirectory(
+            atPath: (path as NSString).deletingLastPathComponent,
+            withIntermediateDirectories: true
+        )
+        FileManager.default.createFile(atPath: path, contents: nil)
+        logHandle = FileHandle(forWritingAtPath: path)
+    }
+
+    private func log(_ s: String) {
+        guard let data = (s + "\n").data(using: .utf8) else { return }
+        FileHandle.standardError.write(data)
+        logHandle?.write(data)
+    }
+
     // MARK: 生命周期
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        setupLog()
         guard acquireSingleInstanceLock() else {
-            FileHandle.standardError.write("已有实例在运行，退出\n".data(using: .utf8)!)
+            log("已有实例在运行，退出")
             NSApp.terminate(nil)
             return
         }
+        loadConfig()
         parseArgs()
         loadPlaylist()
         guard !playlist.isEmpty else {
-            FileHandle.standardError.write("未找到视频文件，目录: \(videoDir)\n".data(using: .utf8)!)
+            log("未找到视频文件，目录: \(videoDir)")
             NSApp.terminate(nil)
             return
         }
+        log("启动: \(playlist.count) 个视频, 当前 \(playlist[currentIndex].lastPathComponent), shuffle=\(shuffle)")
         buildWindows()
         buildMenuBar()
         playCurrent()
@@ -180,8 +208,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let cm = CMTimeGetSeconds(p.currentTime())
             let status = p.timeControlStatus == .playing ? "playing" :
                 (p.timeControlStatus == .waitingToPlayAtSpecifiedRate ? "waiting" : "paused")
-            let line = "[debug] t=\(String(format: "%.2f", cm))s status=\(status) rate=\(p.rate)"
-            FileHandle.standardError.write((line + "\n").data(using: .utf8)!)
+            self.log("[debug] t=\(String(format: "%.2f", cm))s status=\(status) rate=\(p.rate)")
         }
         RunLoop.main.add(t, forMode: .common)
     }
@@ -191,7 +218,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         shuffleTimer?.invalidate()
     }
 
+    // MARK: 配置文件
+
+    /// 配置文件路径。用于 `open -a` 启动时传递参数——
+    /// macOS 26+ 的 `open --args` 会丢弃参数，只能靠文件传参。
+    static var configPath: String {
+        NSHomeDirectory() + "/Library/Application Support/macos-video-wallpaper/config.json"
+    }
+
+    private func loadConfig() {
+        guard let data = FileManager.default.contents(atPath: Self.configPath),
+              let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        else { return }
+
+        if let f = obj["file"] as? String, !f.isEmpty {
+            let p = (f as NSString).expandingTildeInPath
+            if FileManager.default.fileExists(atPath: p) {
+                playlist = [URL(fileURLWithPath: p)]
+                videoDir = (p as NSString).deletingLastPathComponent
+            }
+        }
+        if let d = obj["dir"] as? String, !d.isEmpty {
+            videoDir = (d as NSString).expandingTildeInPath
+        }
+        if let s = obj["shuffle"] as? Bool { shuffle = s }
+        if let dbg = obj["debug"] as? Bool { debugMode = dbg }
+    }
+
     // MARK: 命令行参数
+    // 优先级：命令行 > 配置文件 > 默认值
 
     private func parseArgs() {
         let args = Array(CommandLine.arguments.dropFirst())
